@@ -28,6 +28,7 @@ axis([min(eps),max(eps), 5,1e4])
 %print -depsc 'RankDegreeStudy'
 
 %% Figure 2 
+clear
 load('Rows.mat'); %contains the 2-mode fibers in Chebfun3
 SumV =[];
 for i = 1:18
