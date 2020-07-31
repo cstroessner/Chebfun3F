@@ -1,17 +1,11 @@
-To create the software package:
+Code to reproduce the figures in "Functional Tucker approximation using Chebyshev interpolation" by S. Dolgov, D. Kressner, C.Stroessner 
 
-I need to add (exactly these) files:
-Chebfun3F folder (completely)
-createPlots
-rows.mat
-testfunctionDataGenerator
-testfunction
-TestScriptMultipleFunctions (maybe)
-TestScriptSingleFunction
+To use Chebfun3F you need to additionally download:
+- the Chebfun package (https://www.chebfun.org)
+- Spinterp package (https://www.researchgate.net/publication/330956911_Sparse_Grid_Interpolation_Toolbox_v511)
 
-I need a reference to download (and mention that these need to be on the Matlab path):
-Chebfun package (https://www.chebfun.org)
-Spinterp package (https://www.researchgate.net/publication/330956911_Sparse_Grid_Interpolation_Toolbox_v511)
+The folders Chebfun3F, Chebfun and Spinterp need to be added to the Matlab path
 
-Do I need to add the Chebfun lizense?
+You can run the TestScripts to compare Chebfun3 and Chebfun3F.
+The file createPlots reproduces all figures contained in the paper.
 
