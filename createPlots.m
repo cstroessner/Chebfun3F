@@ -189,7 +189,7 @@ ylabel('$\#$ Function Evaluations','Interpreter','latex')
 %print -depsc 'F5d'
 
 
-%% Figure 6b)
+%% Figure 6a)
 rng(1)
 selectedFunction = 1; %val = 1./(1+25*(x.^2+y.^2+z.^2))
 f = @(x,y,z)testfunction(x,y,z);
