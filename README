@@ -1,0 +1,17 @@
+To create the software package:
+
+I need to add (exactly these) files:
+Chebfun3F folder (completely)
+createPlots
+rows.mat
+testfunctionDataGenerator
+testfunction
+TestScriptMultipleFunctions (maybe)
+TestScriptSingleFunction
+
+I need a reference to download (and mention that these need to be on the Matlab path):
+Chebfun package (https://www.chebfun.org)
+Spinterp package (https://www.researchgate.net/publication/330956911_Sparse_Grid_Interpolation_Toolbox_v511)
+
+Do I need to add the Chebfun lizense?
+
