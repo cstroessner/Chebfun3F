@@ -1,4 +1,4 @@
-Code to reproduce the figures in "Functional Tucker approximation using Chebyshev interpolation" by S. Dolgov, D. Kressner, C.Stroessner 
+Code to reproduce the figures in "Functional Tucker approximation using Chebyshev interpolation" by S. Dolgov, D. Kressner, C.Stroessner (https://arxiv.org/abs/2007.16126)
 
 To use Chebfun3F you need to additionally download:
 - the Chebfun package (https://www.chebfun.org)
