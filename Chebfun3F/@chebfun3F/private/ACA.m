@@ -1,6 +1,6 @@
 %% Adaptive Cross Approximation with full pivoting
 function [Ac, At, Ar, rowInd, colInd] = ACA(A, tol, maxIter)
-
+%A \approx Ac inv(At) Ar'
 Ac = [];
 Ar = [];
 At = [];
@@ -12,6 +12,9 @@ for iter = 1:maxIter
     
     [error,I2] = max(abs(A(:)));
     if isempty(error) || error < tol
+        Ac = Aoriginal(:,colInd);
+        Ar = Aoriginal(rowInd,:)';
+        At = Aoriginal(rowInd,colInd);
         return
     end
     
@@ -19,17 +22,9 @@ for iter = 1:maxIter
     rowInd = [rowInd, I];
     colInd = [colInd, J];
     
-    %A \approx Ac inv(At) Ar'
-    Ac = Aoriginal(:,colInd);
-    Ar = Aoriginal(rowInd,:)';
-    At = Aoriginal(rowInd,colInd);
-    
-    Anew = zeros(size(A));
-    for i = 1:size(A,1)
-        for j = 1:size(A,2)
-            Anew(i,j) = A(i,j) - A(i,J)*(1./A(I,J))*A(I,j);
-        end
-    end
-    A = Anew;
+    A = A-A(:,J)*A(I,:)./A(I,J);
 end
+Ac = Aoriginal(:,colInd);
+Ar = Aoriginal(rowInd,:)';
+At = Aoriginal(rowInd,colInd);
 end

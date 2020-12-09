@@ -27,6 +27,17 @@ pseudoLevel      = prefStruct.chebfun3eps;
 passSampleTest   = prefStruct.sampleTest;
 maxRestarts      = 10;
 
+% Check if fast vectorized evaluations are possible
+try 
+    A = f(1:2,1:2,1:2);
+    vectorize = 1;
+    if isscalar(A)
+        f = @(x,y,z) f(x,y,z) + 0*x + 0*y + 0*z; %ensure vectorization
+    end
+catch
+    vectorize = 0;
+end
+
 % Initialize
 n                = [grid, grid, grid];  %coarseResolution
 m                = n;                   %fineResolution
@@ -59,9 +70,9 @@ while ~happy
             end
             
             % ACA 1
-            T1 = evalTensor(1:n(1),J,K,ff);
+            T1 = evalTensor(1:n(1),J,K,ff,vectorize);
             cf3F.numEvals = cf3F.numEvals + numel(T1);
-            T1 = matrizisation(T1,1);
+            T1 = reshape(T1,n(1),r(2)*r(3));
             [~, tol] = getTol(T1, pseudoLevel, tol);
             [Uc, ~, ~, I,I2] = ACA(T1, tol, n(1));
             r(1) = size(I,2);
@@ -69,9 +80,9 @@ while ~happy
             KT1 = K;
             
             % ACA 2
-            T2 = evalTensor(I,1:n(2),K,ff);
+            T2 = evalTensor(I,1:n(2),K,ff,vectorize);
             cf3F.numEvals = cf3F.numEvals + numel(T2);
-            T2 = matrizisation(T2,2);
+            T2 = reshape(permute(T2,[2,1,3]),n(2),r(1)*r(3));
             [~, tol] = getTol(T2, pseudoLevel, tol);
             [Vc, ~, ~, J, J2] = ACA(T2, tol, n(2));
             r(2) = size(J,2);
@@ -79,9 +90,9 @@ while ~happy
             IT2 = I;
             
             % ACA 3
-            T3 = evalTensor(I,J,1:n(3), ff);
+            T3 = evalTensor(I,J,1:n(3), ff,vectorize);
             cf3F.numEvals = cf3F.numEvals + numel(T3);
-            T3 = matrizisation(T3,3);
+            T3 = reshape(permute(T3,[3,1,2]),n(3),r(1)*r(2));
             [reltol, tol] = getTol(T3, pseudoLevel, tol);
             [Wc, ~, ~, K, K2] = ACA(T3, tol, n(3));
             r(3) = size(K,2);
@@ -100,11 +111,12 @@ while ~happy
                 breakFlag = 1;
             end
             while r(2)*2*sqrt(2) > n(2)
-                n(2) = reffun(n(2));        for i = 1:3
-            while r(i)*2*sqrt(2) > n(i)
-                n(i) = reffun(n(i));
-            end
-        end
+                n(2) = reffun(n(2));        
+                for i = 1:3
+                    while r(i)*2*sqrt(2) > n(i)
+                        n(i) = reffun(n(i));
+                    end
+                end
                 breakFlag = 1;
             end
             while r(3)*2*sqrt(2) > n(3)
@@ -119,8 +131,8 @@ while ~happy
                     fprintf(' >> refine coarse grid \n')
                 end
                 break
-            % Proceed to refinement if r < 2
-            elseif min(r) < 2 
+                % Proceed to refinement if r < 2
+            elseif min(r) < 2
                 break
             end
         end
@@ -190,14 +202,31 @@ while ~happy
             if ~resolvedU
                 Uold = Uf;
                 [Ij,Ik] = ind2sub([size(Jr,2),size(Kr,2)],I2);
-                Uf = zeros([m(1),size(I2,2)]);
-                for i = 1:m(1)
-                    for j = 1:size(I2,2)
-                        if mod(i,2) == 0
-                            Uf(i,j) = ff(i, Jr(Ij(j)), Kr(Ik(j)));
-                            cf3F.numEvals = cf3F.numEvals+1;
-                        else
-                            Uf(i,j) = Uold((i+1)/2,j);
+                if vectorize == 1
+                    nn = [floor(m(1)/2),size(I2,2)];
+                    x = zeros([nn(1),1]);
+                    x(:,1) = 2:2:m(1);
+                    X = repmat(x,1,nn(2));
+                    y = zeros([1,nn(2)]);
+                    y(1,:) = Jr(Ij);
+                    Y = repmat(y,nn(1),1);
+                    z = zeros([1,nn(2)]);
+                    z(1,:) = Kr(Ik);
+                    Z = repmat(z,nn(1),1);
+                    Uf(2:2:m(1),1:nn(2)) = ff(X,Y,Z);
+                    Uf(1:2:m(1),1:nn(2)) = Uold;
+                    cf3F.numEvals = cf3F.numEvals+numel(X);
+                else
+                    Uf = zeros([m(1),size(I2,2)]);
+                    for i = 1:m(1)
+                        for j = 1:size(I2,2)
+                            
+                            if mod(i,2) == 0
+                                Uf(i,j) = ff(i, Jr(Ij(j)), Kr(Ik(j)));
+                                cf3F.numEvals = cf3F.numEvals+1;
+                            else
+                                Uf(i,j) = Uold((i+1)/2,j);
+                            end
                         end
                     end
                 end
@@ -214,14 +243,30 @@ while ~happy
             if ~resolvedV
                 Vold = Vf;
                 [Ji,Jk] = ind2sub([size(Ir,2),size(Kr,2)],J2);
-                Vf = zeros([m(2),size(J2,2)]);
-                for i = 1:m(2)
-                    for j = 1:size(J2,2)
-                        if mod(i,2) == 0
-                            Vf(i,j) = ff(Ir(Ji(j)), i, Kr(Jk(j)));
-                            cf3F.numEvals = cf3F.numEvals+1;
-                        else
-                            Vf(i,j) = Vold((i+1)/2,j);
+                if vectorize == 1
+                    nn = [floor(m(2)/2),size(J2,2)];
+                    y = zeros([nn(1),1]);
+                    y(:,1) = 2:2:m(2);
+                    Y = repmat(y,1,nn(2));
+                    x = zeros([1,nn(2)]);
+                    x(1,:) = Ir(Ji);
+                    X = repmat(x,nn(1),1);
+                    z = zeros([1,nn(2)]);
+                    z(1,:) = Kr(Jk);
+                    Z = repmat(z,nn(1),1);
+                    Vf(2:2:m(2),1:nn(2)) = ff(X,Y,Z);
+                    Vf(1:2:m(2),1:nn(2)) = Vold;
+                    cf3F.numEvals = cf3F.numEvals+numel(X);
+                else
+                    Vf = zeros([m(2),size(J2,2)]);
+                    for i = 1:m(2)
+                        for j = 1:size(J2,2)
+                            if mod(i,2) == 0
+                                Vf(i,j) = ff(Ir(Ji(j)), i, Kr(Jk(j)));
+                                cf3F.numEvals = cf3F.numEvals+1;
+                            else
+                                Vf(i,j) = Vold((i+1)/2,j);
+                            end
                         end
                     end
                 end
@@ -238,14 +283,30 @@ while ~happy
             if ~resolvedW
                 Wold = Wf;
                 [Ki,Kj] = ind2sub([size(Ir,2),size(Jr,2)],K2);
-                Wf = zeros([m(3),size(K2,2)]);
-                for i = 1:m(3)
-                    for j = 1:size(K2,2)
-                        if mod(i,2) == 0
-                            Wf(i,j) = ff(Ir(Ki(j)), Jr(Kj(j)), i);
-                            cf3F.numEvals = cf3F.numEvals+1;
-                        else
-                            Wf(i,j) = Wold((i+1)/2,j);
+                if vectorize == 1
+                    nn = [floor(m(3)/2),size(K2,2)];
+                    z = zeros([nn(1),1]);
+                    z(:,1) = 2:2:m(3);
+                    Z = repmat(z,1,nn(2));
+                    x = zeros([1,nn(2)]);
+                    x(1,:) = Ir(Ki);
+                    X = repmat(x,nn(1),1);
+                    y = zeros([1,nn(2)]);
+                    y(1,:) = Jr(Kj);
+                    Y = repmat(y,nn(1),1);
+                    Wf(2:2:m(3),1:nn(2)) = ff(X,Y,Z);
+                    Wf(1:2:m(3),1:nn(2)) = Wold;
+                    cf3F.numEvals = cf3F.numEvals+numel(X);
+                else
+                    Wf = zeros([m(3),size(K2,2)]);
+                    for i = 1:m(3)
+                        for j = 1:size(K2,2)
+                            if mod(i,2) == 0
+                                Wf(i,j) = ff(Ir(Ki(j)), Jr(Kj(j)), i);
+                                cf3F.numEvals = cf3F.numEvals+1;
+                            else
+                                Wf(i,j) = Wold((i+1)/2,j);
+                            end
                         end
                     end
                 end
@@ -283,13 +344,13 @@ while ~happy
         cf3F.U = chebfun(U, pref);
         cf3F.V = chebfun(V, pref);
         cf3F.W = chebfun(W, pref);
-        
+                
         % Compute the core
-        cf3F.C = evalTensor(I,J,K, ff);
+        cf3F.C = evalTensor(I,J,K, ff,vectorize);
         cf3F.numEvals = cf3F.numEvals + numel(cf3F.C);
         
         if enableLog == 1
-            fprintf('Core & Assembling: max cond %.2d            evals %8.i \n', max([cond(Uf), cond(Vf), cond(Wf)]), cf3F.numEvals-evalsold)
+            fprintf('Core & Assembling: max cond %.2d            evals %8.i \n', max([cond(Q1(I,:)), cond(Q2(J,:)), cond(Q3(K,:))]), cf3F.numEvals-evalsold)
         end
         evalsold = cf3F.numEvals;
     end
@@ -315,6 +376,11 @@ while ~happy
     
     % Restart
     if ~happy
+        if cf3F.numRestarts + 1 == maxRestarts
+            warning('Chebfun3F: max number of restarts reached')
+            return
+        end
+        
         % Increase n
         n(1) = floor(sqrt(2)^(floor(2*log2(n(1))) + 1)) + 1;
         n(2) = floor(sqrt(2)^(floor(2*log2(n(2))) + 1)) + 1;
@@ -343,7 +409,11 @@ while ~happy
         % very low-rank functions
         r(1) = max(r(1),3);
         r(2) = max(r(2),3);
-        r(3) = max(r(3),3);
+        r(3) = max(r(3),3);     
         
+        if cf3F.numRestarts >= maxRestarts/2
+           r = 2*r; 
+        end
     end
+end
 end
