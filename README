@@ -1,4 +1,5 @@
-Code to reproduce the figures in "Functional Tucker approximation using Chebyshev interpolation" by S. Dolgov, D. Kressner, C.Stroessner (SIAM J. Sci. Comput. 2021 43:3, A2190-A2210.} https://doi.org/10.1137/20M1356944 https://arxiv.org/abs/2007.16126)
+Code to reproduce the figures in "Functional Tucker approximation using Chebyshev interpolation" by S. Dolgov, D. Kressner, C.Stroessner 
+(SIAM J. Sci. Comput. 2021 43:3, A2190-A2210. DOI: https://doi.org/10.1137/20M1356944. Arxiv: https://arxiv.org/abs/2007.16126.)
 
 To use Chebfun3F you need to additionally download:
 - the Chebfun package (https://www.chebfun.org)
