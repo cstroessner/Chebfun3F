@@ -10,6 +10,6 @@ The folders Chebfun3F, Chebfun and Spinterp need to be added to the Matlab path
 You can run the TestScripts to compare Chebfun3 and Chebfun3F.
 The file createPlots reproduces all figures contained in the paper.
 
-**The chebfun3F constructor is included in the official chebfun package (https://github.com/chebfun/chebfun) since 1st of July 2022.**
+The chebfun3F constructor is included in the official chebfun package (https://github.com/chebfun/chebfun) since 1st of July 2022.
 It can be used by typing chebfun3(@(x,y,z) cos(x+y+z), 'chebfun3f').
 
